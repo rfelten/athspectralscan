@@ -156,8 +156,8 @@ class AthSpectralScanDecoder(object):
                     if raw_sample == 0:
                         sample = 1
                     else:
-                        sample = raw_sample << max_exp
-                    sumsq_sample += sample*sample
+                        sample = (raw_sample << max_exp)**2
+                    sumsq_sample += sample
                     samples.append(sample)
 
                 if sumsq_sample == 0:
