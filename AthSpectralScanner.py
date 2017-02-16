@@ -125,8 +125,13 @@ class AthSpectralScanner(object):
             os.system("ifconfig %s down" % self.interface)
             os.system("iw dev %s set type managed" % self.interface)
             self._set_spectral_cfg('spectral_scan_ctl', "disable")
+            # need to trigger() here? ? -> not needed. ath9k_cmn_spectral_scan_config() calls
+            # ath9k_hw_ops(ah)->spectral_scan_config() which unset the AR_PHY_SPECTRAL_SCAN_ENABLE flag if needed
             self.need_tear_down = True
             return
+
+    def trigger(self):
+        self._set_spectral_cfg('spectral_scan_ctl', "trigger")
 
     def get_mode(self):
         return self.mode
