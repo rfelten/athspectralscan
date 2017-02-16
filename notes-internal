@@ -17,6 +17,7 @@ Bugs:
 [ ] meta info: read frequency from iw / driver rather than assuming that tune was sucesssuf
 
 (new) Features:
+[ ] discovery of compatible hardware
 [ ] use 'ip' to configure interface instead of old ifconfig
 [ ] DEBUG msg if fft sample was corrupt / too short
 [ ] add on short_repeat: fix TSF by adding +4us per sample

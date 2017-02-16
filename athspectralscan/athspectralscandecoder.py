@@ -1,6 +1,9 @@
+#!/usr/bin/env python
+#  -*- coding: utf-8 -*-
+##
 ## This file is part of the athspectralscan project.
 ##
-## Copyright (C) 2016 Robert Felten - https://github.com/rfelten/
+## Copyright (C) 2016-2017 Robert Felten - https://github.com/rfelten/
 ##
 ## This program is free software; you can redistribute it and/or modify
 ## it under the terms of the GNU General Public License as published by
