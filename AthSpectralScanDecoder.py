@@ -58,9 +58,6 @@ class AthSpectralScanDecoder(object):
     type2_pktsize = 24 + 128
     type3_pktsize = 26 + 64
 
-    # ieee 802.11 constants
-    sc_wide = 0.3125  # in MHz # FIXME: Is this true for IEEE802.11bg ?
-
     def __init__(self, empty_input_queue_timeout_sec=1):
         self.input_queue = mp.Queue()
         self.input_queue_timeout = empty_input_queue_timeout_sec
@@ -164,13 +161,13 @@ class AthSpectralScanDecoder(object):
                     sumsq_sample = 1
                 sumsq_sample = 10 * math.log10(sumsq_sample)
 
-                sc_total = 56  # HT20: 56 OFDM subcarrier, HT40: 128
-                first_sc = freq - AthSpectralScanDecoder.sc_wide * (sc_total/2 + 0.5)
+                # center freq / DC index is at bin 56/2=28 -> subcarrier_0 = freq - 28 * 0.3125 = freq - 8.75
+                subcarrier_0 = freq - 8.75
                 pwr = OrderedDict()
                 for i, sample in enumerate(samples):  # FIXME: the freq calculation / sub carrier mapping  is maybe not correct. Adept and fix FIXME id=2asn49a ref https://www.bastibl.net/ath9k-spectrum-scanning/
-                    subcarrier_freq = first_sc + i*AthSpectralScanDecoder.sc_wide
+                    subcarrier_i = subcarrier_0 + i * 0.3125
                     sigval = noise + rssi + 10 * math.log10(sample) - sumsq_sample  # 10*log() not 20*log(). See https://wiki.freebsd.org/dev/ath_hal(4)/SpectralScan
-                    pwr[subcarrier_freq] = sigval
+                    pwr[subcarrier_i] = sigval
                 # FIXME: add sigval for channel Sum(subcarriers):
                 # use log(x) + log(y) =  log(x*y) -> Sum(log(i)) = log(P(i)) with P as product
 
