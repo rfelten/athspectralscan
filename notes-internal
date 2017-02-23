@@ -2,6 +2,7 @@ Docu:
 [ ] write readme: install + quickstart
 
 Refactoring:
+[ ] add additional monitor interface in bg/manual mode -> no side effects of ifup/down
 [x] Merge AthSensor + AthPhy. Remove scan_up/down logic. simplify mode_X() ?
 [x] Remove AthReader: -> DumpWriter(w/o Queue) gets sensor (metadata!)
 [x] Add DumpReader: read from file/scan0 to file /AthSpectralScanDecoder
@@ -17,6 +18,10 @@ Bugs:
 [ ] meta info: read frequency from iw / driver rather than assuming that tune was sucesssuf
 
 (new) Features:
+[ ] add hint if debugfs is not readable + remove root check in dump_to_file.py
+[ ] HT40 support
+[ ] add magic/version to dump files
+[ ] write documentation about dump file format
 [ ] discovery of compatible hardware
 [ ] use 'ip' to configure interface instead of old ifconfig
 [ ] DEBUG msg if fft sample was corrupt / too short
@@ -31,10 +36,10 @@ Bugs:
 [ ] DumpWriter: add metadata: cpuinfo (?)
 [ ] SensorFactory: load config from json file
 [ ] SensorDiscovery: Device discovery: via debugfs (?)
-[ ] use / create unittests: tester need do match hw spec (e.g. "1x hardware"
-)
+[ ] use / create unittests: tester need do match hw spec (e.g. "1x hardware")
 
 Never part of this lib:
+- AthSpectralScanDecoder write to file (instead of a queue) - "useful" output format is task of the user
 - ath10k support (since it uses closed source firmware blobs
 - Auto-switch channels after X sec in background scan
 - SensorOrchestra: Merge samples of multiple sensors
