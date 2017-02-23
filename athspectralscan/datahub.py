@@ -112,7 +112,7 @@ class DataHub(object):
                     if self.decoder is not None:
                         while len(data) > 4:
                             (length, ) = struct.unpack_from('<I', data[0:4])
-                            if length > len(data):
+                            if length > len(data[4:]):
                                 break  # need more data
                             data = data[4:]
                             sample = data[0:length]
