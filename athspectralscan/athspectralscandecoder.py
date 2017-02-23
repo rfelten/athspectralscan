@@ -62,8 +62,8 @@ class AthSpectralScanDecoder(object):
     def __init__(self, empty_input_queue_timeout_sec=1):
         self.input_queue = mp.Queue()
         self.input_queue_timeout = empty_input_queue_timeout_sec
-        self.output_queue = None  # user needs to set it
-        self.worker_pool = None  # create it if output_queue is known. Used in TYPE_MULTI_CORE
+        self.output_queue = None
+        self.worker_pool = None
         self.number_of_processes = 1
         self.shut_down = mp.Event()
         self.shut_down.clear()
@@ -100,7 +100,6 @@ class AthSpectralScanDecoder(object):
 
     def enqueue(self, data):
         self.input_queue.put(data)
-        #print("Queue size (ca): ",self.input_queue.qsize())
 
     def _decode_data_process(self):
         while not self.shut_down.is_set():
@@ -110,12 +109,9 @@ class AthSpectralScanDecoder(object):
             except Empty:
                 self.work_done.set()
                 continue
-            #print("decode data:", len(data))
             # process data
             for decoded_sample in AthSpectralScanDecoder._decode(data, no_pwr=self.disable_pwr_decode):
                 self.output_queue.put(decoded_sample)
-                #print("decoded")
-        #logger.debug("Decoder process EOL")
 
     @staticmethod
     def _decode(data, no_pwr=False):
@@ -165,9 +161,9 @@ class AthSpectralScanDecoder(object):
                 # center freq / DC index is at bin 56/2=28 -> subcarrier_0 = freq - 28 * 0.3125 = freq - 8.75
                 subcarrier_0 = freq - 8.75
                 pwr = OrderedDict()
-                for i, sample in enumerate(samples):  # FIXME: the freq calculation / sub carrier mapping  is maybe not correct. Adept and fix FIXME id=2asn49a ref https://www.bastibl.net/ath9k-spectrum-scanning/
+                for i, sample in enumerate(samples):
                     subcarrier_i = subcarrier_0 + i * 0.3125
-                    sigval = noise + rssi + 10 * math.log10(sample) - sumsq_sample  # 10*log() not 20*log(). See https://wiki.freebsd.org/dev/ath_hal(4)/SpectralScan
+                    sigval = noise + rssi + 10 * math.log10(sample) - sumsq_sample
                     pwr[subcarrier_i] = sigval
                 # FIXME: add sigval for channel Sum(subcarriers):
                 # use log(x) + log(y) =  log(x*y) -> Sum(log(i)) = log(P(i)) with P as product
