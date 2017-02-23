@@ -40,18 +40,16 @@ class AthSpectralScanDecoder(object):
     rssi - a RSSI value <- where does it come from ? FIXME
     pwr - a ordered dict, containing sub-carrier->dBm entries
 
-    The decoding consumes a lot of ressources (read more below), there for it implemented as multiprocessing Pool to
+    The decoding consumes a lot of resources (read more below), there for it implemented as multiprocessing Pool to
     make avoid GIL and make use of modern multi core CPUs.
 
     The major amount of processing requirements comes from the use of a log10() function, called once per sub carrier (!)
-    In other words: for a HT20 sample there are 56 log10() PER SAMPLE (!!!).
-    Multihrading is one approach to tackle this issue. Another is to use an precomputed look-up table. In some scenarios
-    the log() can be avoided complete, for instance if the user is only intrested in e.g. the TSF values, not in the
+    In other words: for a HT20 sample there are 56x log10() PER EACH SAMPLE (!!!).
+    Multi threading is one approach to tackle this issue. Another is to use an precomputed look-up table. In some scenarios
+    the log() can be avoided complete, for instance if the user is only interested in e.g. the TSF values, not in the
     sub carrier pwr info.
 
-    Please note, that when using the multiprocessing approach, the samples are not delivered in order anymore!
-
-
+    Please note, that when using the multiprocessing approach, the samples can be delivered out-of-order!
     """
 
     # spectral scan packet format constants
