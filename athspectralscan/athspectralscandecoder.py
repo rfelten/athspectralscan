@@ -80,9 +80,6 @@ class AthSpectralScanDecoder(object):
     def disable_pwr_decoding(self, flag):
         self.disable_pwr_decode = flag
 
-    def use_lut_decoder(self):
-        pass
-
     def set_number_of_processes(self, number):
         self.number_of_processes = number
 
@@ -147,21 +144,20 @@ class AthSpectralScanDecoder(object):
                 sumsq_sample = 0
                 samples = []
                 for raw_sample in sdata:
-                    if raw_sample == 0:
-                        sample = 1
-                    else:
-                        sample = (raw_sample << max_exp)**2
+                    sample = (raw_sample << max_exp)**2
                     sumsq_sample += sample
                     samples.append(sample)
 
                 if sumsq_sample == 0:
-                    sumsq_sample = 1
+                    continue  # drop invalid sample (all sub-carriers are zero)
                 sumsq_sample = 10 * math.log10(sumsq_sample)
 
                 # center freq / DC index is at bin 56/2=28 -> subcarrier_0 = freq - 28 * 0.3125 = freq - 8.75
                 subcarrier_0 = freq - 8.75
                 pwr = OrderedDict()
                 for i, sample in enumerate(samples):
+                    if sample == 0:                                         # this would break log()
+                        sample = sum(samples) / len(samples)                # anyone a better idea?
                     subcarrier_i = subcarrier_0 + i * 0.3125
                     sigval = noise + rssi + 10 * math.log10(sample) - sumsq_sample
                     pwr[subcarrier_i] = sigval
