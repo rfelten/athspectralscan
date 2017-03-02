@@ -56,12 +56,12 @@ def collect_samples(interface, filename):
 
 
 if __name__ == '__main__':
-    if len(sys.argv) == 2 and os.geteuid() == 0 :
+    if len(sys.argv) == 2:
         collect_samples(interface=sys.argv[1], filename="dump.bin")
-    elif len(sys.argv) == 3 and os.geteuid() == 0:
+    elif len(sys.argv) == 3:
         collect_samples(interface=sys.argv[1], filename=sys.argv[2])
     else:
-        print("Usage: $ sudo %s <wifi-interface> [dump file]" % sys.argv[0])
+        print("Usage: $ %s <wifi-interface> [dump file]" % sys.argv[0])
         exit(0)
 
 

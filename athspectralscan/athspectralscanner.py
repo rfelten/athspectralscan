@@ -45,7 +45,8 @@ class AthSpectralScanner(object):
                     self.debugfs_dir = dirname
                     break
         if self.debugfs_dir is None:
-            raise Exception("Unable to access 'spectral_scan_ctl' file for interface %s" % interface)
+            raise Exception("Unable to access 'spectral_scan_ctl' file for interface '%s'. "
+                    "Maybe you need to adjust the access rights of /sys/kernel/debug/ieee80211 ?" % interface)
         logger.debug("interface '%s' is on '%s' via %s. debugfs found at %s" %
                      (self.interface, self.phy, self.driver, self.debugfs_dir))
 
@@ -95,9 +96,9 @@ class AthSpectralScanner(object):
         if mode is "chanscan" and self.mode is not "chanscan":
             self.mode = mode
             logger.debug("enter 'chanscan' mode: set dev type to 'managed'")
-            os.system("ifconfig %s down" % self.interface)
-            os.system("iw dev %s set type managed" % self.interface)
-            os.system("ifconfig %s up" % self.interface)  # FIXME: does the interface need to be up?
+            os.system("sudo ifconfig %s down" % self.interface)
+            os.system("sudo iw dev %s set type managed" % self.interface)
+            os.system("sudo ifconfig %s up" % self.interface)  # FIXME: does the interface need to be up?
             self._set_spectral_cfg('spectral_scan_ctl', "chanscan")
             #self._start_scan_process() -> start()
             self.need_tear_down = True
@@ -106,9 +107,9 @@ class AthSpectralScanner(object):
         if mode is "background" and self.mode is not "background":
             self.mode = mode
             logger.debug("enter 'background' mode: set dev type to 'monitor'")
-            os.system("ifconfig %s down" % self.interface)
-            os.system("iw dev %s set monitor fcsfail" % self.interface)  # fcsfail = also report frames with corrupt FCS
-            os.system("ifconfig %s up" % self.interface)  # need to be up
+            os.system("sudo ifconfig %s down" % self.interface)
+            os.system("sudo iw dev %s set monitor fcsfail" % self.interface)  # fcsfail = also report frames with corrupt FCS
+            os.system("sudo ifconfig %s up" % self.interface)  # need to be up
             self._set_spectral_cfg('spectral_scan_ctl', "background")
             #self._set_spectral_cfg('spectral_scan_ctl', "trigger") -> start()
             self.need_tear_down = True
@@ -116,16 +117,16 @@ class AthSpectralScanner(object):
         if mode is "manual" and self.mode is not "manual":
             self.mode = mode
             logger.debug("enter 'manual' mode: set dev type to 'monitor'")
-            os.system("ifconfig %s down" % self.interface)
-            os.system("iw dev %s set monitor fcsfail" % self.interface)  # fcsfail = also report frames with corrupt FCS
-            os.system("ifconfig %s up" % self.interface)  # need to be up
+            os.system("sudo ifconfig %s down" % self.interface)
+            os.system("sudo iw dev %s set monitor fcsfail" % self.interface)  # fcsfail = also report frames with corrupt FCS
+            os.system("sudo ifconfig %s up" % self.interface)  # need to be up
             self._set_spectral_cfg('spectral_scan_ctl', "manual")
             self.need_tear_down = True
             return
         if mode is "disable" and self.mode is not "disable":
             self.mode = mode
-            os.system("ifconfig %s down" % self.interface)
-            os.system("iw dev %s set type managed" % self.interface)
+            os.system("sudo ifconfig %s down" % self.interface)
+            os.system("sudo iw dev %s set type managed" % self.interface)
             self._set_spectral_cfg('spectral_scan_ctl', "disable")
             # need to trigger() here? ? -> not needed. ath9k_cmn_spectral_scan_config() calls
             # ath9k_hw_ops(ah)->spectral_scan_config() which unset the AR_PHY_SPECTRAL_SCAN_ENABLE flag if needed
@@ -218,7 +219,7 @@ class AthSpectralScanner(object):
             if chan == channel or freq == frequency:
                 self.current_freq = freq
                 logger.debug("set freq to %d in mode %s" % (freq, self.channel_mode))
-                os.system("iw dev %s set freq %d %s" % (self.interface, freq, self.channel_mode))
+                os.system("sudo iw dev %s set freq %d %s" % (self.interface, freq, self.channel_mode))
                 if self.running:
                     self._set_spectral_cfg('spectral_scan_ctl', "trigger")  # need to trigger again after switch channel
                 return

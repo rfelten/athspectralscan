@@ -15,7 +15,9 @@ tba
 
 ## Dependencies
 
- * iw
+ * iw, ifconfig, sudo
+ * $USER in the sudoers file
+ * ```/sys/kernel/debug/ieee80211``` needs to be read+writeable for the current user
   
 
 ## Installation
