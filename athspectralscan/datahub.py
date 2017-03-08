@@ -96,7 +96,7 @@ class DataHub(object):
         chunk_size = 1024*1024*1024
         while not self.stop_reader_thread.is_set():
             if self.read_recorded_data:
-                # read <len><samples><len><samples> until the file ends, then exit thread
+                # read <ts><len><samples><ts><len><samples> until the file ends, then exit thread
                 data = bytes()
                 file_pos = 0
                 while True:
@@ -110,25 +110,28 @@ class DataHub(object):
                         self.dump_file_out_handle.write(data)
                     # if output is a decoder, we need to unpack it
                     if self.decoder is not None:
-                        while len(data) > 4:
-                            (length, ) = struct.unpack_from('<I', data[0:4])
-                            if length > len(data[4:]):
+                        while len(data) > 12:
+                            (ts,) = struct.unpack_from('<Q', data[0:8])
+                            (length, ) = struct.unpack_from('<I', data[8:12])
+                            if length > len(data[12:]):
                                 break  # need more data
-                            data = data[4:]
+                            data = data[12:]
                             sample = data[0:length]
                             data = data[length:]
-                            self.decoder.enqueue(sample)
+                            self.decoder.enqueue((ts, sample))
                     if self.stop_reader_thread.is_set():
                         break
             # read live data -> already chunk'ed
             else:
+                ts = datetime.datetime.now()
                 data = self.dump_file_in_handle.read()
                 if not data:
                     time.sleep(.1)  # wait for need data from hardware
                     continue
                 else:
-                    # if output is file, pack <len><samples>
+                    # if output is file, pack <ts><len><samples>
                     if self.dump_file_out_handle:
+                        self.dump_file_out_handle.write(struct.pack("<Q", int(ts.timestamp() * 1e6)))
                         self.dump_file_out_handle.write(struct.pack("<I", len(data)))
                         self.dump_file_out_handle.write(data)
                     # if output is decoder, just pass

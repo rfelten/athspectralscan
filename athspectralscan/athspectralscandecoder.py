@@ -113,6 +113,7 @@ class AthSpectralScanDecoder(object):
     @staticmethod
     def _decode(data, no_pwr=False):
         pos = 0
+        (ts, data) = data
         while pos < len(data) - AthSpectralScanDecoder.hdrsize + 1:
 
             (stype, slen) = struct.unpack_from(">BH", data, pos)
@@ -164,7 +165,7 @@ class AthSpectralScanDecoder(object):
                 # FIXME: add sigval for channel Sum(subcarriers):
                 # use log(x) + log(y) =  log(x*y) -> Sum(log(i)) = log(P(i)) with P as product
 
-                yield (tsf, freq, noise, rssi, pwr)
+                yield (ts, (tsf, freq, noise, rssi, pwr))
 
             # 40 MHz
             elif stype == 2:

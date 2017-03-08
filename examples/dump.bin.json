@@ -1,1 +1,1 @@
-{"spectral_scan_ctl": "background", "frequency": 2412, "driver": "ath9k_htc", "spectral_fft_period": "15", "spectral_period": "255", "end_time": "2017-02-17 20:38:53", "spectral_count": "8", "start_time": "2017-02-17 20:38:48", "spectral_short_repeat": "0"}
+{"spectral_period": "18", "spectral_scan_ctl": "background", "end_time": "2017-03-08 10:34:14", "frequency": 2412, "spectral_fft_period": "2", "spectral_short_repeat": "1", "start_time": "2017-03-08 10:34:09", "spectral_count": "8", "driver": "ath9k_htc"}

@@ -32,7 +32,7 @@ with open(path.join(here, 'README.md'), encoding='utf-8') as f:
     long_description = f.read()
 
 setup(name='athspectralscan',
-      version='0.1',
+      version='0.2',
       description='TBA',
       url='https://github.com/rfelten/athspectralscan',
       author='Robert Felten',

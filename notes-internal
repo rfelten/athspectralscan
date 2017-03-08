@@ -18,6 +18,7 @@ Bugs:
 [ ] meta info: read frequency from iw / driver rather than assuming that tune was sucesssuf
 
 (new) Features:
+[x] add userspace timestamp to samples
 [ ] auto chmod 777 of /sys/kernel/debug/ieee80211 (?)
 [ ] count how many samples are invalid
 [ ] test / switch to pypy http://speed.pypy.org/

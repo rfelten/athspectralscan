@@ -54,10 +54,10 @@ def decode_samples(dump_file, output_file):
     with open(output_file, "wt") as f:
         while True:
             try:
-                (tsf, freq, noise, rssi, pwr) = work_queue.get(block=False)
+                (ts, (tsf, freq, noise, rssi, pwr)) = work_queue.get(block=False)
                 # pwr is a OrderedDict. flat it
                 power = ",".join(["%.2f" % p for (freq, p) in pwr.items()])
-                s = "%s,%s,%s,%s,%s\n" % (tsf, freq, noise, rssi, power)
+                s = "%s,%s,%s,%s,%s,%s\n" % (ts, tsf, freq, noise, rssi, power)
                 f.write(s)
             except queue.Empty:
                 if decoder.is_finished():  # only break if decoder is finished AND queue is empty
