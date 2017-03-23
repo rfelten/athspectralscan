@@ -134,7 +134,7 @@ class AthSpectralScanDecoder(object):
                 pos += 17
 
                 if no_pwr:
-                    yield (tsf, freq, noise, rssi, dict())
+                    yield (ts, (tsf, freq, noise, rssi, dict()))
                     pos += 56
                     continue
 
