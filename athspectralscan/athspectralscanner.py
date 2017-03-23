@@ -23,7 +23,7 @@
 import os
 import logging
 import subprocess
-from multiprocessing import Process
+from multiprocessing import Process, Event
 logger = logging.getLogger(__name__)
 
 
@@ -59,6 +59,7 @@ class AthSpectralScanner(object):
 
         # chanscan mode triggers on changed channels. Use Process to run "iw scan" to tune to all channels
         self.chanscan_process = None
+        self.chanscan_process_exit = Event()
 
         self.channel_mode = "HT20"  # Fixme: use enum here?
 
@@ -235,8 +236,8 @@ class AthSpectralScanner(object):
         self.set_mode("disable")
         if self.need_tear_down:
             self._restore_former_config()
-            self._stop_scan_process()
             self.need_tear_down = False
+        self._stop_scan_process()
 
     def _tune(self, channel=None, frequency=None):
         if self.mode is "chanscan":  # FIXME allow "manual chanscan": chanscan w/o iw scan
@@ -300,17 +301,19 @@ class AthSpectralScanner(object):
     def _start_scan_process(self):
         if self.chanscan_process is None:
             logger.debug("start process chanscan")
+            self.chanscan_process_exit.clear()
             self.chanscan_process = Process(target=self._scan, args=())
             self.chanscan_process.start()
 
     def _stop_scan_process(self):
         if self.chanscan_process is not None:
             logger.debug("stop process chanscan")
-            self.chanscan_process.terminate()
+            #self.chanscan_process.terminate()  # dont work
+            self.chanscan_process_exit.set()
             self.chanscan_process.join()
             self.chanscan_process = None
 
     def _scan(self):
-        while True:
+        while not self.chanscan_process_exit.is_set():
             cmd = 'iw dev %s scan' % self.interface
             os.system('%s >/dev/null 2>/dev/null' % cmd)  # call blocks
