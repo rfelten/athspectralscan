@@ -184,11 +184,17 @@ class AthSpectralScanner(object):
             return
         self._set_spectral_cfg('spectral_count', count)
 
+    def get_spectral_count(self):
+        return int(self._get_spectral_cfg('spectral_count'))
+
     def set_spectral_fft_period(self, period):
         if period > 15 or period < 0:
             logger.error("invalid value for 'spectral_fft_period' of %d. valid: 0-15" % period)
             return
         self._set_spectral_cfg('spectral_fft_period', period)
+
+    def get_spectral_fft_period(self):
+        return int(self._get_spectral_cfg('spectral_fft_period'))
 
     def set_spectral_period(self, period):
         if period > 255 or period < 0:
@@ -196,16 +202,26 @@ class AthSpectralScanner(object):
             return
         self._set_spectral_cfg('spectral_period', period)
 
+    def get_spectral_period(self):
+        return int(self._get_spectral_cfg('spectral_period'))
+
     def set_spectral_short_repeat(self, repeat):
         if repeat > 1 or repeat < 0:
             logger.error("invalid value for 'spectral_short_repeat' of %d. valid: 0-1" % repeat)
             return
         self._set_spectral_cfg('spectral_short_repeat', repeat)
 
+    def get_spectral_short_repeat(self):
+        return int(self._get_spectral_cfg('spectral_short_repeat'))
+
     def _set_spectral_cfg(self, filenname, value):
         logger.debug("set '%s' to '%s'" % (filenname, value))
         with open(self.cfg_files[filenname]['path'], 'w') as f:
             f.write("%s" % value)
+
+    def _get_spectral_cfg(self, filenname):
+        with open(self.cfg_files[filenname]['path']) as f:
+            return f.read()
 
     def start(self):
         self.running = True
