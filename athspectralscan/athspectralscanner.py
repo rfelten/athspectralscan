@@ -46,7 +46,7 @@ class AthSpectralScanner(object):
                     break
         if self.debugfs_dir is None:
             raise Exception("Unable to access 'spectral_scan_ctl' file for interface '%s'. "
-                    "Maybe you need to adjust the access rights of /sys/kernel/debug/ieee80211 ?" % interface)
+                    "Maybe you need to adjust the access rights of /sys/kernel/debug/ieee80211 ?" % interface)  # Fixme: sudo chmod -R 777 /sys/kernel/debug
         logger.debug("interface '%s' is on '%s' via %s. debugfs found at %s" %
                      (self.interface, self.phy, self.driver, self.debugfs_dir))
 
@@ -54,7 +54,8 @@ class AthSpectralScanner(object):
         self.channels = []
         self._get_supported_channels()
         logger.debug("interface '%s' supports the channels: %s" % (self.interface, self.channels))
-        self.current_freq = "default"
+        self.current_freq = -1
+        self.current_chan = -1
 
         # chanscan mode triggers on changed channels. Use Process to run "iw scan" to tune to all channels
         self.chanscan_process = None
@@ -140,6 +141,10 @@ class AthSpectralScanner(object):
     def trigger(self):
         self._set_spectral_cfg('spectral_scan_ctl', "trigger")
 
+    def retrigger(self):
+        if self.mode == "background":
+            self._set_spectral_cfg('spectral_scan_ctl', "trigger")
+
     def get_mode(self):
         return self.mode
 
@@ -168,6 +173,9 @@ class AthSpectralScanner(object):
         self._tune(frequency=frequency)
 
     # sugar: get_frequency()?
+
+    def get_supported_freqchan(self):
+        return self.channels
 
     # Source of min/max values for parameters: ath9k/spectral-common.c
     def set_spectral_count(self, count):
@@ -222,6 +230,7 @@ class AthSpectralScanner(object):
             (freq, chan) = self.channels[i]
             if chan == channel or freq == frequency:
                 self.current_freq = freq
+                self.current_chan = chan
                 logger.debug("set freq to %d in mode %s" % (freq, self.channel_mode))
                 os.system("sudo iw dev %s set freq %d %s" % (self.interface, freq, self.channel_mode))
                 if self.running:
