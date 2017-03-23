@@ -112,6 +112,7 @@ class DataHub(object):
                     if self.decoder is not None:
                         while len(data) > 12:
                             (ts,) = struct.unpack_from('<Q', data[0:8])
+                            ts = ts / 1e9  # was stored as int. convert back to float, ns resolution
                             (length, ) = struct.unpack_from('<I', data[8:12])
                             if length > len(data[12:]):
                                 break  # need more data
@@ -127,15 +128,14 @@ class DataHub(object):
                 data = self.dump_file_in_handle.read()
                 if not data:
                     time.sleep(.1)  # wait for need data from hardware
+                    self.scanner.retrigger()
                     continue
                 else:
                     # if output is file, pack <ts><len><samples>
                     if self.dump_file_out_handle:
-                        self.dump_file_out_handle.write(struct.pack("<Q", int(ts.timestamp() * 1e6)))
+                        self.dump_file_out_handle.write(struct.pack("<Q", int(ts.timestamp() * 1e9)))  # int, ns resolution
                         self.dump_file_out_handle.write(struct.pack("<I", len(data)))
                         self.dump_file_out_handle.write(data)
-                    # if output is decoder, just pass
+                    # if output is decoder, append ts and pass it queue
                     if self.decoder:
-                        self.decoder.enqueue(data)
-
-
+                        self.decoder.enqueue((ts, data))
