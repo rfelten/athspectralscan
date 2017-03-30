@@ -169,7 +169,67 @@ class AthSpectralScanDecoder(object):
 
             # 40 MHz
             elif stype == 2:
-                raise Exception("HT40 not supported yet, sorry!")
+                if pos >= len(data) - AthSpectralScanDecoder.hdrsize - AthSpectralScanDecoder.type2_pktsize + 1:
+                    break
+                pos += AthSpectralScanDecoder.hdrsize
+                (chantype, freq, rssi_l, rssi_u, tsf, noise_l, noise_u,
+                 max_mag_l, max_mag_u, max_index_l, max_index_u,
+                 hweight_l, hweight_u, max_exp) = \
+                    struct.unpack_from(">BHbbQbbHHbbbbb", data, pos)
+                pos += 24
+
+                if no_pwr:
+                    yield (ts, (tsf, freq, (noise_l + noise_u) / 2, (rssi_l + rssi_u) / 2, dict()))
+                    pos += 128
+                    continue
+
+                sdata = struct.unpack_from("128B", data, pos)
+                pos += 128
+
+                # calculate power in dBm
+                samples = []
+                for raw_sample in sdata:
+                    sample = (raw_sample << max_exp)**2
+                    samples.append(sample)
+
+                # create lower + upper binsum:
+                sumsq_sample_lower = 0
+                for sl in samples[0:63]:
+                    sumsq_sample_lower += sl
+                if sumsq_sample_lower == 0:
+                    continue  # drop invalid sample (all sub-carriers are zero)
+                sumsq_sample_lower = 10 * math.log10(sumsq_sample_lower)
+
+                sumsq_sample_upper = 0
+                for su in samples[64:127]:
+                    sumsq_sample_upper += su
+                if sumsq_sample_upper == 0:
+                    continue  # drop invalid sample (all sub-carriers are zero)
+                sumsq_sample_upper = 10 * math.log10(sumsq_sample_upper)
+
+                # adjust center freq, depending on HT40+ or -
+                if chantype == 2:  # NL80211_CHAN_HT40MINUS
+                    freq -= 10
+                elif chantype == 3:  # NL80211_CHAN_HT40PLUS
+                    freq += 10
+                else:
+                    raise Exception("got unknown chantype: %d" % chantype)
+
+                # center freq / DC index is at bin 128/2=64 -> subcarrier_0 = freq - 64 * 0.3125 = freq - 20
+                subcarrier_0 = freq - 20
+                pwr = OrderedDict()
+                for i, sample in enumerate(samples):
+                    if sample == 0:                                         # this would break log()
+                        sample = sum(samples) / len(samples)                # anyone a better idea?
+                    if i < 64:
+                        sigval = noise_l + rssi_l + 10 * math.log10(sample) - sumsq_sample_lower
+                    else:
+                        sigval = noise_u + rssi_u + 10 * math.log10(sample) - sumsq_sample_upper
+                    subcarrier_i = subcarrier_0 + i * 0.3125
+                    pwr[subcarrier_i] = sigval
+
+                yield (ts, (tsf, freq, (noise_l+noise_u)/2, (rssi_l+rssi_u)/2, pwr))
+
             # ath10k
             elif stype == 3:
-                raise Exception("ath10k not supported yet, sorry!")
+                raise Exception("ath10k is not supported, sorry!")

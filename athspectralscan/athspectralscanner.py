@@ -25,6 +25,9 @@ import logging
 import subprocess
 from multiprocessing import Process, Event
 logger = logging.getLogger(__name__)
+import sys
+logger.level = logging.DEBUG
+logger.addHandler(logging.StreamHandler(sys.stdout))
 
 
 class AthSpectralScanner(object):
@@ -43,6 +46,9 @@ class AthSpectralScanner(object):
                 if phy == self.phy:
                     self.driver = dirname.split(os.path.sep)[-1]
                     self.debugfs_dir = dirname
+                    with open(os.path.sep.join(dirname.split(os.path.sep)[:-1]) + os.path.sep + 'ht40allow_map') as f:
+                        self.ht40allow_map_raw = f.read()
+                    f.close()
                     break
         if self.debugfs_dir is None:
             raise Exception("Unable to access 'spectral_scan_ctl' file for interface '%s'. "
@@ -54,14 +60,16 @@ class AthSpectralScanner(object):
         self.channels = []
         self._get_supported_channels()
         logger.debug("interface '%s' supports the channels: %s" % (self.interface, self.channels))
-        self.current_freq = -1
-        self.current_chan = -1
+        logger.debug("ht40allow map: %s" % self.ht40allow_map_raw.replace('\n', ","))
+        self.ht40allow_map = dict()
+        for line in self.ht40allow_map_raw.split('\n'):  # 2412 HT40  + \n2432 HT40 -+ \n2484 Disabled
+            freq_mode_allowmap = line.split()
+            if len(freq_mode_allowmap) == 3:
+                self.ht40allow_map[freq_mode_allowmap[0]] = freq_mode_allowmap[2]
 
         # chanscan mode triggers on changed channels. Use Process to run "iw scan" to tune to all channels
         self.chanscan_process = None
         self.chanscan_process_exit = Event()
-
-        self.channel_mode = "HT20"  # Fixme: use enum here?
 
         # Store current state of the config files
         self.cfg_files = {}
@@ -71,8 +79,12 @@ class AthSpectralScanner(object):
         )
         self._store_former_config()
         self.mode = self.cfg_files['spectral_scan_ctl']['former_value']
-        self.need_tear_down = True # fixme
+        self.need_tear_down = True  # fixme
         self.running = False
+
+        self.current_freq = 0  # Fixme: read from interface
+        self.current_ht_mode = "HT20"  # Fixme: read from interface
+        self.set_channel(1)  # Fixme: read from interface
 
     def __del__(self):
         #self.stop()  # FIXME
@@ -161,6 +173,7 @@ class AthSpectralScanner(object):
             path = self.debugfs_dir + os.path.sep + fn
             with open(path, 'r') as f:
                 cfg[fn] = f.read().strip()
+            f.close()
         cfg['driver'] = self.driver
         cfg['frequency'] = self.current_freq
         return cfg
@@ -168,15 +181,29 @@ class AthSpectralScanner(object):
     def set_channel(self, channel):
         self._tune(channel=channel)
 
-    # sugar: get_channel()?
-
     def set_frequency(self, frequency):
         self._tune(frequency=frequency)
 
-    # sugar: get_frequency()?
-
     def get_supported_freqchan(self):
         return self.channels
+
+    def set_HT_mode(self, ht_mode):
+        if ht_mode == "HT20":
+            self.current_ht_mode = ht_mode
+        elif "HT40" in ht_mode:
+            self._set_ht40_mode_for_freq(self.current_freq)
+        else:
+            raise Exception("unknown value for HT mode: '%s'. valid: HT20, HT40" % count)
+        self.set_channel(self.current_chan)  # set new HT mode
+
+    def _set_ht40_mode_for_freq(self, freq):
+        if not str(freq) in self.ht40allow_map.keys():
+            self.current_ht_mode = "HT20"
+            return
+        if "+" in self.ht40allow_map[str(freq)]:
+            self.current_ht_mode = "HT40+"
+        else:
+            self.current_ht_mode = "HT40-"
 
     # Source of min/max values for parameters: ath9k/spectral-common.c
     def set_spectral_count(self, count):
@@ -219,10 +246,13 @@ class AthSpectralScanner(object):
         logger.debug("set '%s' to '%s'" % (filenname, value))
         with open(self.cfg_files[filenname]['path'], 'w') as f:
             f.write("%s" % value)
+        f.close()
 
     def _get_spectral_cfg(self, filenname):
         with open(self.cfg_files[filenname]['path']) as f:
-            return f.read()
+            cfg = f.read()
+        f.close()
+        return cfg
 
     def start(self):
         self.running = True
@@ -240,22 +270,24 @@ class AthSpectralScanner(object):
         self._stop_scan_process()
 
     def _tune(self, channel=None, frequency=None):
-        if self.mode is "chanscan":  # FIXME allow "manual chanscan": chanscan w/o iw scan
-            logger.warn("Manual set of channel/frequency gets probably overwritten in chanscan mode.")
-            return
+        if channel is None and frequency is None:
+            raise Exception("need channel or frequency")
+        if self.mode is "chanscan":
+            logger.warning("Manual set of channel/frequency gets probably overwritten in chanscan mode.")
         for i in range(0, len(self.channels)):
             (freq, chan) = self.channels[i]
             if chan == channel or freq == frequency:
                 self.current_freq = freq
                 self.current_chan = chan
-                logger.debug("set freq to %d in mode %s" % (freq, self.channel_mode))
-                os.system("sudo iw dev %s set freq %d %s" % (self.interface, freq, self.channel_mode))
+                if self.current_ht_mode != "HT20":
+                    self._set_ht40_mode_for_freq(freq)
+                logger.debug("set freq to %d in mode %s" % (freq, self.current_ht_mode))
+                os.system("sudo iw dev %s set freq %d %s" % (self.interface, freq, self.current_ht_mode))
                 if self.running:
                     self._set_spectral_cfg('spectral_scan_ctl', "trigger")  # need to trigger again after switch channel
                 return
-        logger.warning("can not tune to unsupported channel %d / frequency %d. Supported channels: %s"
-                       % chan, freq, self.channels)
-
+        logger.warning("can not tune to unsupported channel %d / frequency %d. "
+                       "Supported channels: %s" % channel, frequency, self.channels)
 
     # FIXME: add interface config, use with open
     def _store_former_config(self):
