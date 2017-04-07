@@ -127,10 +127,7 @@ class DataHub(object):
                 ts = datetime.datetime.now()
                 data = self.dump_file_in_handle.read()
                 if not data:
-                    time.sleep(0.1)  # wait for data from hardware
-                    data = self.dump_file_in_handle.read()
-                if not data:
-                    self.scanner.retrigger()  # still no data? kick butt!
+                    time.sleep(0.1)
                     continue
                 else:
                     # if output is file, pack <ts><len><samples>
