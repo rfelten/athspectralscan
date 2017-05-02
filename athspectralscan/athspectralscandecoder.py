@@ -33,7 +33,8 @@ logger = logging.getLogger(__name__)
 class AthSpectralScanDecoder(object):
 
     """ AthSpectralScanDecoder inputs a binary Atheros Spectral Scan sample and decode its values to its clear text
-    representation. The result (for HT20) is a tuple (tsf, freq, noise, rssi, pwr):
+    representation. The result (for HT20) is a tuple (ts (tsf, freq, noise, rssi, pwr)):
+    ts - kernel timestamp
     tsf - TSF value
     freq - channel center frequency
     noise - noisefloor (some hardware do not report this, look out for the default value of -95dBm)
@@ -54,7 +55,6 @@ class AthSpectralScanDecoder(object):
 
     # spectral scan packet format constants
     hdrsize = 3
-    # hdrsize = 3 + 8+4
     type1_pktsize = 17 + 56
     type2_pktsize = 24 + 128
     type3_pktsize = 26 + 64
@@ -117,7 +117,6 @@ class AthSpectralScanDecoder(object):
         while pos < len(data) - AthSpectralScanDecoder.hdrsize + 1:
 
             (stype, slen) = struct.unpack_from(">BH", data, pos)
-            # (stype, slen, ts_sec, ts_usec) = struct.unpack_from(">BHQL", data, pos)
             if not ((stype == 1 and slen == AthSpectralScanDecoder.type1_pktsize) or
                     (stype == 2 and slen == AthSpectralScanDecoder.type2_pktsize) or
                     (stype == 3 and slen == AthSpectralScanDecoder.type3_pktsize)):

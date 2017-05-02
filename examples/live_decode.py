@@ -52,8 +52,10 @@ def live_sample(interface):
     hub = DataHub(scanner=scanner, decoder=decoder)
 
     #scanner.set_mode("chanscan")
+    scanner.set_spectral_short_repeat(1)
     scanner.set_mode("background")
     scanner.set_channel(1)
+
 
     # Start to read from spectral_scan0
     hub.start()
