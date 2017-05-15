@@ -42,7 +42,7 @@ data and transform it into something meaning full, e.g. time, frequency, power (
 
 ## More Detailed Documentation (API)
 
-The folder ```examples/``` contains several example how to use the API.
+The folder ```examples/``` contains several examples how to use the API.
 
 AthSpectralScanner:
  
