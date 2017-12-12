@@ -81,7 +81,7 @@ DataHub:
  * stop() - Destroy reader thread, write metadata (.json) and close open files
 
 Dataformat of dump files:
- * (time stamp, length, data ): ```[8 byte unsigned integer][4 byte unsigned int][raw spetral data]``` Packed via:
+ * (time stamp, length, data ): ```[8 byte unsigned integer][4 byte unsigned int][raw spectral data]``` Packed via:
   ```python
     self.dump_file_out_handle.write(struct.pack("<Q", int(ts.timestamp() * 1e9)))  # int, ns resolution
     self.dump_file_out_handle.write(struct.pack("<I", len(data)))
@@ -105,7 +105,7 @@ to distinguish (groups of) samples without decode them.
   
 ## Pitfalls
 
- * Need run as root in order to access debugfs files. Alternativly to the user needs to allow non-root
+ * Need run as root in order to access debugfs files. Alternatively to the user needs to allow non-root
  users to acess the debugfs via ```$ sudo chmod a+rx /sys/kernel/debug```
 
 ## Open Issues / To Do
